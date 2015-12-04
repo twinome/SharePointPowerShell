@@ -28,7 +28,7 @@ Function ApprovedVerb-TWPATTERN {
     .PARAMETER 2
         Blah
     .EXAMPLE
-        ApprovedVerb-TWPATTERN -site https://speval -lib "sdfds"
+        ApprovedVerb-TWPATTERN -site https://speval -lib "testClone"
     #>
     [CmdletBinding()] 
     param (
