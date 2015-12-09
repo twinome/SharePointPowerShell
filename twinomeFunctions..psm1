@@ -3057,7 +3057,7 @@ Function Get-Item {
         Website
     .PARAMETER list
         List name
-    .PARAMETER list
+    .PARAMETER ID
         Item ID
     .EXAMPLE
         Get-Item -site https://speval -list "content" -ID "1"
@@ -3081,7 +3081,7 @@ Function Get-Item {
 
                 if($lst) {
                     try {
-                        $item = $lst.GetItemById("$ID")
+                        $global:item = $lst.GetItemById("$ID")
                         Write-Output "Got item - $item"                    
                     }
         
@@ -3094,6 +3094,64 @@ Function Get-Item {
                 else {
                     Write-Output "list $list doesnt exist in $site"                
                 }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Set-BoolFieldValue {
+    <#
+    .SYNOPSIS
+        Sets a bool field to true or false
+    .DESCRIPTION
+        Set-BoolFieldValue
+    .PARAMETER site
+        Website
+    .PARAMETER list
+        List name
+    .PARAMETER ID
+        Item ID
+    .PARAMETER fieldName
+        Field name
+    .PARAMETER set
+        Specify either $true or $false
+    .EXAMPLE
+        Set-BoolFieldValue -site https://speval -list "BoolTest" -ID "1" -fieldName "BoolField" -set $true
+    .NOTES
+        Uses the get-item function
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$ID,
+        [string]$list,
+        [string]$fieldName, 
+        [bool]$set
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            Get-Item -site $site -list $list -ID $ID
+            $field = $item[$fieldName]
+
+                if($field -ne $null){
+                    $item[$fieldName] = $set
+                    $item.Update()
+                    Write-Output "$item set to $set"  
+                }
+
+                else{
+                    Write-Output "Can't find field - $fieldName"
+                } 
         }
 
         catch{
