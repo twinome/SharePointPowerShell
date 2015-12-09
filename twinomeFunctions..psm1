@@ -3047,3 +3047,58 @@ Function Find-SCAsHTML {
     }
 } 
 
+Function Get-Item {
+    <#
+    .SYNOPSIS
+        Gets a SharePoint item based on it's ID
+    .DESCRIPTION
+        TEMPLATE
+    .PARAMETER site
+        Website
+    .PARAMETER list
+        List name
+    .PARAMETER list
+        Item ID
+    .EXAMPLE
+        Get-Item -site https://speval -list "content" -ID "1"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$ID,
+        [string]$list
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $lst = $web.Lists[$list]
+
+                if($lst) {
+                    try {
+                        $item = $lst.GetItemById("$ID")
+                        Write-Output "Got item - $item"                    
+                    }
+        
+                    catch {
+                        $error = $_
+                        Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                    }
+                }
+
+                else {
+                    Write-Output "list $list doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
