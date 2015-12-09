@@ -3194,4 +3194,78 @@ Function Get-SCSize {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
+}
+
+Function Get-SCSizeHTML {
+    <#
+    .SYNOPSIS
+        Gets size of all site collections in a particular web application created HTML table
+    .DESCRIPTION
+        Get-SCSizeHTML
+    .PARAMETER webApp
+        Web application
+    .EXAMPLE
+        $sourcePath = "D:\scSizeReport.txt"
+        $spLibrary = "https://speval/AdminReports"
+        $destinationFile = "scSizeReport.txt"
+        $destinationPath = "$spLibrary/$destinationFile"
+
+        Get-SCSizeHTML -webApp https://speval | Out-File $sourcePath
+
+        Invoke-WebRequest -Uri $destinationPath -InFile $sourcePath -Method PUT -UseDefaultCredentials
+    .NOTES
+        Uses the Get-SCSize function 
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webApp
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+        $today = Get-Date -format "d MMM yyyy"
+        $sites = get-spsite -WebApplication $webApp -Limit all  | Sort-Object -Property "url"
+
+            $sites | ForEach-Object{
+                $size = Get-SCSize -site $_.Url
+                $mb = [Math]::Ceiling([decimal]($size))
+                $url = $_.Url
+                $title = $_.RootWeb.Title
+                # Write-Output "$title $url $mb"
+                $tr += "<tr>
+                            <td>
+                                <a href='$url'>$title</a>    
+                            </td>
+                            <td>
+                                $mb 
+                            </td>
+                        </tr>"
+            }
+
+        $body = "
+        <div>
+            <h4>Last updated - $today</h4>
+        </div>
+        <div>
+            <table id='cdReportTab' class='display'>
+                <thead>
+                    <tr>
+                        <td>
+                            Site Collection
+                        </td>
+                        <td>
+                            Size (in MB)
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    $tr
+                </tbody>
+            </table>
+        </div>"
+        $body           
+    }
 }  
