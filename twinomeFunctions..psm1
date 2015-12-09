@@ -3214,7 +3214,7 @@ Function Get-SCSizeHTML {
 
         Invoke-WebRequest -Uri $destinationPath -InFile $sourcePath -Method PUT -UseDefaultCredentials
     .NOTES
-        Uses the Get-SCSize function 
+        Uses the Get-SCSize & the Get-SCItemCount functions
     #>
     [CmdletBinding()] 
     param (
@@ -3230,7 +3230,9 @@ Function Get-SCSizeHTML {
         $sites = get-spsite -WebApplication $webApp -Limit all  | Sort-Object -Property "url"
 
             $sites | ForEach-Object{
+                $count = @()
                 $size = Get-SCSize -site $_.Url
+                $count = Get-SCItemCount -site $_.Url
                 $mb = [Math]::Ceiling([decimal]($size))
                 $url = $_.Url
                 $title = $_.RootWeb.Title
@@ -3241,6 +3243,9 @@ Function Get-SCSizeHTML {
                             </td>
                             <td>
                                 $mb 
+                            </td>
+                            <td>
+                                $count 
                             </td>
                         </tr>"
             }
@@ -3258,6 +3263,9 @@ Function Get-SCSizeHTML {
                         </td>
                         <td>
                             Size (in MB)
+                        </td>
+                        <td>
+                            Item count
                         </td>
                     </tr>
                 </thead>
