@@ -3306,12 +3306,11 @@ Function Get-SCItemCount {
                 $webs | ForEach-Object{
                     $lists = $_.lists
 
-                        $lists | ForEach-Object{
-                            $count = $_.ItemCount
-                            $global:totalCount += $count
+                        foreach($list in $lists){
+                            $totalCount += $list.ItemCount
                         }
                 }
-            # Write-Output $totalCount
+            Write-Output $totalCount
         }
 
         catch{
@@ -3319,4 +3318,4 @@ Function Get-SCItemCount {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
-}  
+} 
