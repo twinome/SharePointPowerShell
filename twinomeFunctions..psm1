@@ -3159,4 +3159,39 @@ Function Set-BoolFieldValue {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
-} 
+}
+
+Function Get-SCSize {
+    <#
+    .SYNOPSIS
+        Gets size of site collection in MB
+    .DESCRIPTION
+        Get-SCSize
+    .PARAMETER site
+        Site collection
+    .EXAMPLE
+        Get-SCSize -site https://speval
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $sc = Get-SPSite -Identity $site
+            $global:usage = $sc.usage.storage/1MB
+            Write-Output "$usage"
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}  
