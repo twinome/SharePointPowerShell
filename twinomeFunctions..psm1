@@ -3268,4 +3268,47 @@ Function Get-SCSizeHTML {
         </div>"
         $body           
     }
+}
+
+Function Get-SCItemCount {
+    <#
+    .SYNOPSIS
+        Gets total number of list items in a site collection
+    .DESCRIPTION
+        Get-SCItemCount
+    .PARAMETER site
+        Site collection
+    .EXAMPLE
+        Get-SCItemCount -site https://speval
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $webs = Get-spsite -Identity $site | Get-SPWeb -Limit all
+
+                $webs | ForEach-Object{
+                    $lists = $_.lists
+
+                        $lists | ForEach-Object{
+                            $count = $_.ItemCount
+                            $global:totalCount += $count
+                        }
+                }
+            # Write-Output $totalCount
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
 }  
