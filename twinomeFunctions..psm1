@@ -3340,7 +3340,6 @@ Function Get-List {
     )
       
     BEGIN {
-        Start-SPAssignment -Global
         $ErrorActionPreference = 'Stop'    
     }
     
@@ -3364,10 +3363,6 @@ Function Get-List {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
-
-    END {
-        Stop-SPAssignment -Global    
-    }
 } 
 
 Function Get-Group {
@@ -3390,7 +3385,6 @@ Function Get-Group {
     )
       
     BEGIN {
-        Start-SPAssignment -Global
         $ErrorActionPreference = 'Stop'    
     }
     
@@ -3414,8 +3408,203 @@ Function Get-Group {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
+} 
 
-    END {
-        Stop-SPAssignment -Global    
+Function Get-PermissionLevel {
+    <#
+    .SYNOPSIS
+        Gets a permission level
+    .DESCRIPTION
+        Get-PermissionLevel
+    .PARAMETER siteUrl
+        Url of site collection
+    .PARAMETER permissionLevelName
+        Name of permission level
+    .EXAMPLE
+        Get-PermissionLevel -siteUrl https://speval -permissionLevelName "Full Control"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$siteUrl, 
+        [string]$permissionLevelName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $site = Get-SPSite -Identity $siteUrl
+            $web = $site.RootWeb
+            $role = $web.RoleDefinitions | Where-Object {$_.name-like "*$permissionLevelName*"}
+
+                if($role) {
+                    Write-Output $role
+                }
+
+                else {
+                    Write-Output "Role '$permissionLevelName' doesn't exist in web '$siteUrl'"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
     }
 } 
+
+Function Get-InheritanceStatusWeb {
+    <#
+    .SYNOPSIS
+        Gets the inheritance status of a web
+    .DESCRIPTION
+        Get-InheritanceStatusWeb
+    .PARAMETER webUrl
+        Url of web
+    .EXAMPLE
+        Get-InheritanceStatusWeb -webUrl https://speval
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $webUrl 
+            $inheritanceStatusWeb = $web.HasUniqueRoleAssignments
+            Write-Output $inheritanceStatusWeb           
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Set-GroupPermissionsWeb {
+    <#
+    .SYNOPSIS
+        Sets permissions for a SharePoint permission group
+    .DESCRIPTION
+        Set-GroupPermissionsWeb
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER groupName
+        Name of group
+    .PARAMETER permissionLevelName
+        Name of group
+    .EXAMPLE
+        Set-GroupPermissionsWeb -webUrl https://speval -groupName "SharePointEval Home Owners" -permissionLevelName "Full Control"
+        
+        Dependance on:
+            Get-InheritanceStatusWeb
+            Get-PermissionLevel
+            Get-Group
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$groupName,
+        [string]$permissionLevelName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $inheritanceStatus = Get-InheritanceStatusWeb -webUrl $webUrl
+
+                if($inheritanceStatus -eq $true){
+                    $role = Get-PermissionLevel -siteUrl $webUrl -permissionLevelName $permissionLevelName
+                    $group = Get-Group -webUrl $webUrl -groupName $groupName
+                    $assignment = $group.ParentWeb.RoleAssignments.GetAssignmentByPrincipal($group)
+                    $assignment.RoleDefinitionBindings.Add($role)
+                    $assignment.Update()
+                    $group.Update()
+                    Write-Output "Role '$permissionLevelName' added to group '$groupName' in web '$webUrl'"     
+                }
+
+                elseif($inheritanceStatus -eq $fasle){
+                    Write-Output "Web '$webUrl' doesn't have unique permissions"
+                }        
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Remove-GroupPermissionsWeb {
+    <#
+    .SYNOPSIS
+        Removed permissions for a SharePoint permission group
+    .DESCRIPTION
+        Remove-GroupPermissionsWeb
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER groupName
+        Name of group
+    .PARAMETER permissionLevelName
+        Name of group
+    .EXAMPLE
+        Remove-GroupPermissionsWeb -webUrl https://speval -groupName "SharePointEval Home Owners" -permissionLevelName "Full Control"
+        
+        Dependance on:
+            Get-InheritanceStatusWeb
+            Get-PermissionLevel
+            Get-Group
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$groupName,
+        [string]$permissionLevelName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $inheritanceStatus = Get-InheritanceStatusWeb -webUrl $webUrl
+
+                if($inheritanceStatus -eq $true){
+                    $role = Get-PermissionLevel -siteUrl $webUrl -permissionLevelName $permissionLevelName
+                    $group = Get-Group -webUrl $webUrl -groupName $groupName
+                    $assignment = $group.ParentWeb.RoleAssignments.GetAssignmentByPrincipal($group)
+                    $assignment.RoleDefinitionBindings.Remove($role)
+                    $assignment.Update()
+                    $group.Update()
+                    Write-Output "Role '$permissionLevelName' removed from group '$groupName' in web '$webUrl'"     
+                }
+
+                elseif($inheritanceStatus -eq $fasle){
+                    Write-Output "Web '$webUrl' doesn't have unique permissions"
+                }        
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+
