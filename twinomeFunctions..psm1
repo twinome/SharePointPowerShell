@@ -3319,3 +3319,103 @@ Function Get-SCItemCount {
         }
     }
 } 
+
+Function Get-List {
+    <#
+    .SYNOPSIS
+        Gets a list
+    .DESCRIPTION
+        Get-List
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER listName
+        Name of list
+    .EXAMPLE
+        Get-List -webUrl https://speval -listName "BoolTest"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$listName
+    )
+      
+    BEGIN {
+        Start-SPAssignment -Global
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $webUrl
+            $list = $web.Lists[$listName]
+
+                if($list) {
+                    Write-Output $list
+                }
+
+                else {
+                    Write-Output "list '$listName' doesn't exist in web '$webUrl'"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        Stop-SPAssignment -Global    
+    }
+} 
+
+Function Get-Group {
+    <#
+    .SYNOPSIS
+        Gets a SharePoint permission group
+    .DESCRIPTION
+        Get-Group
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER groupName
+        Name of group
+    .EXAMPLE
+        Get-Group -webUrl https://speval -groupName "SharePointEval Home Owners"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$groupName
+    )
+      
+    BEGIN {
+        Start-SPAssignment -Global
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $webUrl
+            $group = $web.Groups[$groupName]
+
+                if($group) {
+                    Write-Output $group
+                }
+
+                else {
+                    Write-Output "group '$groupName' doesn't exist in web '$webUrl'"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        Stop-SPAssignment -Global    
+    }
+} 
