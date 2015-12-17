@@ -3491,6 +3491,44 @@ Function Get-InheritanceStatusWeb {
     }
 } 
 
+Function Get-InheritanceStatusList {
+    <#
+    .SYNOPSIS
+        Gets the inheritance status of a list
+    .DESCRIPTION
+        Get-InheritanceStatusList
+    .PARAMETER listName
+        Name of list
+    .PARAMETER webUrl
+        Url of web
+    .EXAMPLE
+        Get-InheritanceStatusList -webUrl "https://speval" -listName "BoolTest"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$listName, 
+        [string]$webUrl
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $list = Get-List -webUrl $webUrl -listName $listName
+            $inheritanceStatusList = $List.HasUniqueRoleAssignments
+            Write-Output $inheritanceStatusList          
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
 Function Set-GroupPermissionsWeb {
     <#
     .SYNOPSIS
@@ -3607,4 +3645,130 @@ Function Remove-GroupPermissionsWeb {
     }
 } 
 
+Function Set-GroupPermissionsList {
+    <#
+    .SYNOPSIS
+        Sets permissions for a SharePoint permission group in list
+    .DESCRIPTION
+        Set-GroupPermissionsList
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER listName
+        Name of list
+    .PARAMETER groupName
+        Name of group
+    .PARAMETER permissionLevelName
+        Name of group
+    .EXAMPLE
+        Set-GroupPermissionsList -webUrl https://speval -listName "BoolTest" -groupName "SharePointEval Home Owners" -permissionLevelName "Contribute"
+        
+        Dependance on:
+            Get-InheritanceStatusList
+            Get-PermissionLevel
+            Get-Group
+            Get-List
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$listName, 
+        [string]$groupName,
+        [string]$permissionLevelName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
 
+        try{
+            $inheritanceStatus = Get-InheritanceStatusList -webUrl $webUrl -listName $listName
+
+                if($inheritanceStatus -eq $true){
+                    $role = Get-PermissionLevel -siteUrl $webUrl -permissionLevelName $permissionLevelName
+                    $group = Get-Group -webUrl $webUrl -groupName $groupName
+                    $list = Get-List -webUrl $webUrl -listName $listName
+
+                    $assignment = $list.RoleAssignments.GetAssignmentByPrincipal($group)
+                    $assignment.RoleDefinitionBindings.Add($role)
+                    $assignment.Update()
+                    $group.Update()
+                    Write-Output "Role '$permissionLevelName' added to group '$groupName' in list '$listName'"     
+                }
+
+                elseif($inheritanceStatus -eq $fasle){
+                    Write-Output "List '$listName' doesn't have unique permissions"
+                }        
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Remove-GroupPermissionsList {
+    <#
+    .SYNOPSIS
+        Removes permissions for a SharePoint permission group in list
+    .DESCRIPTION
+        Remove-GroupPermissionsList
+    .PARAMETER webUrl
+        Url of web
+    .PARAMETER listName
+        Name of list
+    .PARAMETER groupName
+        Name of group
+    .PARAMETER permissionLevelName
+        Name of group
+    .EXAMPLE
+        Remove-GroupPermissionsList -webUrl https://speval -listName "BoolTest" -groupName "SharePointEval Home Owners" -permissionLevelName "Contribute"
+        
+        Dependance on:
+            Get-InheritanceStatusList
+            Get-PermissionLevel
+            Get-Group
+            Get-List
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webUrl, 
+        [string]$listName, 
+        [string]$groupName,
+        [string]$permissionLevelName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $inheritanceStatus = Get-InheritanceStatusList -webUrl $webUrl -listName $listName
+
+                if($inheritanceStatus -eq $true){
+                    $role = Get-PermissionLevel -siteUrl $webUrl -permissionLevelName $permissionLevelName
+                    $group = Get-Group -webUrl $webUrl -groupName $groupName
+                    $list = Get-List -webUrl $webUrl -listName $listName
+
+                    $assignment = $list.RoleAssignments.GetAssignmentByPrincipal($group)
+                    $assignment.RoleDefinitionBindings.Remove($role)
+                    $assignment.Update()
+                    $group.Update()
+                    Write-Output "Role '$permissionLevelName' removed from group '$groupName' in list '$listName'"     
+                }
+
+                elseif($inheritanceStatus -eq $fasle){
+                    Write-Output "List '$listName' doesn't have unique permissions"
+                }        
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
