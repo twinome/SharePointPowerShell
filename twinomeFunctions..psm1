@@ -3772,3 +3772,44 @@ Function Remove-GroupPermissionsList {
         }
     }
 } 
+
+
+Function Get-WebsWithNonStandardTheme {
+    <#
+    .SYNOPSIS
+        Script to identify webs with a non standard theme
+    .DESCRIPTION
+        Get-WebsWithNonStandardTheme
+    .PARAMETER webApp
+        Web application
+    .EXAMPLE
+        Get-WebsWithNonStandardTheme -webApp https://speval
+    #>
+    param (
+        [string]$webApp
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $webs = Get-SPSite -WebApplication $webApp -Limit all | Get-SPWeb -Limit all | Where-Object {$_.ThemedCssFolderUrl}
+            
+                if($webs){
+                    Write-Output $webs
+                }
+                
+                else{
+                    Write-Output "no webs found with non-standard theme" 
+                }          
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
