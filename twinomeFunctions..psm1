@@ -3773,7 +3773,6 @@ Function Remove-GroupPermissionsList {
     }
 } 
 
-
 Function Get-WebsWithNonStandardTheme {
     <#
     .SYNOPSIS
@@ -3805,6 +3804,88 @@ Function Get-WebsWithNonStandardTheme {
                 else{
                     Write-Output "no webs found with non-standard theme" 
                 }          
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Set-PermsLevel {
+    <#
+    .SYNOPSIS
+        Script to set permissions in permission level - all SC's in a WA
+    .DESCRIPTION
+        Set-PermsLevel
+    .PARAMETER webApp
+        Web application
+    .PARAMETER level
+        Permission level
+    .EXAMPLE
+        Set-PermsLevel -webApp https://awebapp -level "a perm level"
+    .NOTES
+        Dependancy on Get-PermissionLevel function
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webApp, 
+        [string]$level
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+
+            $sites = get-spsite -WebApplication $webApp -Limit all
+
+                $sites | ForEach-Object {
+                    $url = $_.url
+                    $perm = Get-PermissionLevel -siteUrl $url -permissionLevelName $level
+        
+                        if($perm -NotLike "*doesn't exist in web*"){
+                            $base = "ViewListItems,
+                                    AddListItems,
+                                    EditListItems,
+                                    DeleteListItems,
+                                    ApproveItems,
+                                    OpenItems,
+                                    ViewVersions,
+                                    DeleteVersions,
+                                    CancelCheckout,
+                                    ManagePersonalViews,
+                                    ManageLists,
+                                    ViewFormPages,
+                                    Open,
+                                    ViewPages,
+                                    AddAndCustomizePages,
+                                    ApplyStyleSheets,
+                                    ViewUsageData,
+                                    CreateSSCSite,
+                                    CreateGroups,
+                                    ManagePermissions,
+                                    BrowseDirectories,
+                                    BrowseUserInfo,
+                                    AddDelPrivateWebParts,
+                                    UpdatePersonalWebParts,
+                                    ManageWeb,
+                                    UseClientIntegration,
+                                    UseRemoteAPIs,
+                                    ManageAlerts,
+                                    CreateAlerts,
+                                    EditMyUserInfo,
+                                    EnumeratePermissions" 
+        
+                            $perm.BasePermissions = $base 
+                            $perm.Update()
+                            Write-Output "$url updated - $level"                
+                        }
+                }
         }
 
         catch{
