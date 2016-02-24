@@ -3893,4 +3893,119 @@ Function Set-PermsLevel {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
+}
+
+Function Get-PermissionReport {
+    <#
+    .SYNOPSIS
+        Generates a CSV permission report for all webs in a particular web application
+    .DESCRIPTION
+        Get-PermissionReport
+    .PARAMETER webApp
+        The web application you want to generate the report for
+    .PARAMETER outPath
+        The path for the CSV
+    .EXAMPLE
+        Get-PermissionReport -webApp https://awebapp -outPath "D:\testPermReport.csv"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$webApp, 
+        [string]$outPath
+    )
+      
+    BEGIN {
+        Start-SPAssignment -Global
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $webs = Get-SPSite -WebApplication $webApp -Limit all | Get-SPWeb -Limit all
+            set-variable -option constant -name out -value $outPath
+            "sep=;" | Out-File $out 
+            "WebName;WebUrl;Inherited;User;Group;GivenDirect" | Out-File $out -append
+
+                $webs | ForEach-Object {
+                    $webUrl = $_.Url
+                    $webName = $_.Title
+
+                        if($_.HasUniquePerm -eq $false){
+                            $groups = $_.groups
+                            $perms =  $_.RoleAssignments | Where-Object {$_.Member -like "*i:0#.w*" -and $_.RoleDefinitionBindings.name -notlike "*Limited*"}
+
+                                $perms | ForEach-Object{
+                                    $member = $_.Member
+                                    $person = $member.DisplayName
+                                    $defs = $_.RoleDefinitionBindings
+
+                                        $defs | ForEach-Object {
+                                        $defName = $_.name
+
+                                            if($defName -ne "Limited Access"){
+                                                "$webName" + ";" + "$webUrl" + ";" + "Yes" + ";" + "$person" + ";" + "N/A" + ";" + "$defName" + ";" | Out-File $out -append     
+                                            }
+                                        }
+                                }
+
+                                $groups | ForEach-Object{
+                                    $groupName = $_.Name
+                                    $users = $_.Users
+
+                                        if($users){
+
+                                            $users | ForEach-Object{
+                                                $userName = $_.DisplayName
+                                                "$webName" + ";" + "$webUrl" + ";" + "Yes" + ";" + "$userName" + ";" + "$groupName" + ";" + "N/A" + ";" | Out-File $out -append 
+                                            }                                  
+                                        }
+                                }
+                        }
+
+                        if($_.HasUniquePerm -eq $true){
+                            $groups = $_.groups
+                            $perms =  $_.RoleAssignments | Where-Object {$_.Member -like "*i:0#.w*" -and $_.RoleDefinitionBindings.name -notlike "*Limited*"}
+
+                                $perms | ForEach-Object{
+                                    $member = $_.Member
+                                    $person = $member.DisplayName
+                                    $defs = $_.RoleDefinitionBindings
+
+                                        $defs | ForEach-Object {
+                                        $defName = $_.name
+
+                                            if($defName -ne "Limited Access"){
+                                                "$webName" + ";" + "$webUrl" + ";" + "No" + ";" + "$person" + ";" + "N/A" + ";" + "$defName" + ";" | Out-File $out -append     
+                                            }
+                                        }
+                                }
+
+                                $groups | ForEach-Object{
+                                    $groupName = $_.Name
+                                    $users = $_.Users
+
+                                        if($users){
+
+                                            $users | ForEach-Object{
+                                                $userName = $_.DisplayName
+                                                "$webName" + ";" + "$webUrl" + ";" + "No" + ";" + "$userName" + ";" + "$groupName" + ";" + "N/A" + ";" | Out-File $out -append 
+                                            }                                  
+                                        }
+                                }
+                        }        
+                }
+
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        Stop-SPAssignment -Global    
+    }
 } 
+
