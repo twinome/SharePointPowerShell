@@ -2975,9 +2975,7 @@ Function Find-SCAsHTML {
     )
     process{
         $today = Get-Date -format "d MMM yyyy"
-        $webs = Get-spsite -WebApplication $webApp -Limit all -ErrorAction SilentlyContinue |
-                Get-SPWeb -Limit all | 
-                Where-Object {$_.HasUniqueRoleAssignments -eq $true}
+        $webs = Get-spsite -WebApplication $webApp -Limit all -ErrorAction SilentlyContinue | Get-SPWeb -Limit all | Where-Object {$_.HasUniqueRoleAssignments -eq $true}
     
             if($webs){
                 
@@ -2986,31 +2984,37 @@ Function Find-SCAsHTML {
                     $webName = $_.title
                     $parentUrl = $_.Site.RootWeb.Url
                     $parentName = $_.Site.RootWeb.title
-                    $groups = $_.Groups | Where-Object {$_.roles -like "*Owner*" -or $statusGroupPerms -like "*Full Control*"}
+                    $groups = $_.Groups | Where-Object {$_.roles -like "*permlevel*" -or $_.roles -like "*otherpermlevel*"}
 
                         $groups | ForEach-Object{
-                            $userLI = @()
                             $users = $_.Users
-                            $groupName = $_.title
+
+                                if($users -ne $null){
+                                    $userLI = @()
+                                    $groupName = $_.name
                             
-                                $users | ForEach-Object{
-                                    $userName = $_.displayName
-                                    $userLI += "<li>$userName</li>"
-                                }
-                            $groupTR += "
-                                        <tr>
-                                            <td>
-                                                <a href='$url'>$webName</a>    
-                                            </td>
-                                            <td>
-                                                <a href='$parentUrl'>$parentName</a>    
-                                            </td>
-                                            <td>
-                                                <ul>
-                                                   $userLI
-                                                </ul>
-                                            </td>
+                                        $users | ForEach-Object{
+                                            $userName = $_.displayName
+                                            $userLI += "<li>$userName</li>"
+                                        }
+                                    $groupTR += "
+                                                <tr>
+                                                    <td>
+                                                        <a href='$url'>$webName</a>    
+                                                    </td>
+                                                    <td>
+                                                        <a href='$parentUrl'>$parentName</a>    
+                                                    </td>
+                                                    <td>
+                                                        $groupName       
+                                                    </td>
+                                                    <td>
+                                                        <ul>
+                                                           $userLI
+                                                        </ul>
+                                                    </td>
                                         </tr>"
+                                }
                         }
                 }
             }
@@ -3032,6 +3036,9 @@ Function Find-SCAsHTML {
                                 </td>
                                 <td>
                                     Site collection
+                                </td>
+                                <td>
+                                    Permission group name
                                 </td>
                                 <td>
                                     Site administrators
