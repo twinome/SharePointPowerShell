@@ -4079,3 +4079,112 @@ Function Get-VersionStatusList {
     }
 }  
 
+Function Get-CheckOutStatusList {
+    <#
+    .SYNOPSIS
+        Returns the versioning stauts for a list
+    .DESCRIPTION
+        Get-VersionStatusList
+    .PARAMETER site
+        SharePoint site Url
+    .PARAMETER listName
+        Name of list
+    .EXAMPLE
+        Get-CheckOutStatusList -site https://pp-edrm.cma.gov.uk/sites/ict/43 -listName "Analysis"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$listName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $list = $web.Lists[$listName]
+
+                if($list) {
+                    $checkOut = $list.ForceCheckout 
+                    
+                        if($checkOut -eq $true){                            
+                            Write-Output "Enforced" 
+                        }
+                        else{
+                            Write-Output "Optional"    
+                        }   
+                }
+
+                else {
+                    Write-Output "list $lib doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+    }
+} 
+
+Function Get-FolderStatusList {
+    <#
+    .SYNOPSIS
+        Returns the versioning stauts for a list
+    .DESCRIPTION
+        Get-VersionStatusList
+    .PARAMETER site
+        SharePoint site Url
+    .PARAMETER listName
+        Name of list
+    .EXAMPLE
+        Get-FolderStatusList -site https://pp-edrm.cma.gov.uk/sites/ict/43 -listName "Analysis"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$listName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $list = $web.Lists[$listName]
+
+                if($list) {
+                    $folders = $list.EnableFolderCreation
+                    
+                        if($folders -eq $false){                            
+                            Write-Output "Disabled" 
+                        }
+                        else{
+                            Write-Output "Allowed"    
+                        }   
+                }
+
+                else {
+                    Write-Output "list $lib doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+    }
+} 
