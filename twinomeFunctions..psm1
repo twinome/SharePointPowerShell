@@ -4014,5 +4014,68 @@ Function Get-PermissionReport {
     END {
         Stop-SPAssignment -Global    
     }
-} 
+}
+
+Function Get-VersionStatusList {
+    <#
+    .SYNOPSIS
+        Returns the versioning stauts for a list
+    .DESCRIPTION
+        Get-VersionStatusList
+    .PARAMETER site
+        SharePoint site Url
+    .PARAMETER listName
+        Name of list
+    .EXAMPLE
+        Get-VersionStatusList -site https://asite -listName "A List"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$listName
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $list = $web.Lists[$listName]
+
+                if($list) {
+                    $versioning = $list.EnableVersioning 
+                    
+                        if($versioning -eq $true){
+                            $minor = $list.EnableMinorVersions
+
+                                if($minor -eq $true){
+                                    Write-Output "Minor"
+                                }
+                                else{
+                                    Write-Output "Major"            
+                                }
+
+                        }
+                        else{
+                            Write-Output "None"    
+                        }   
+                }
+
+                else {
+                    Write-Output "list $lib doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+    }
+}  
 
