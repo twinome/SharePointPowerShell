@@ -4188,3 +4188,41 @@ Function Get-FolderStatusList {
     END {
     }
 } 
+
+Function Get-TermsWithKeyword {
+    <#
+    .SYNOPSIS
+        Finds terms with particular keywords
+    .DESCRIPTION
+        Get-TermsWithKeyword
+    .PARAMETER web
+        Web site address
+    .PARAMETER filter
+        Keyword that you want to look for
+    .PARAMETER group
+        Taxonomy group
+    .EXAMPLE
+        Get-TermsWithKeyword -web https://asite -group "Taxonomy" -filter "A Keyword"
+    #>
+    param (
+        [string]$web,
+        [string]$filter,
+        [string]$group
+    )
+
+    $site = Get-SPWeb $web
+    $ts = Get-SPTaxonomySession -Site $site.site
+    $tstore = $ts.TermStores[0]
+    $tgroup = $tstore.Groups[$group]
+    $tsets = $tgroup.TermSets
+        
+        $tsets | ForEach-Object{
+            $terms = $_.terms | Where-Object {$_.name -like "*$filter*"}
+
+                $terms | ForEach-Object{
+                    $term = $_.name
+                    $parent = $_.TermSets.name
+                    Write-Output "$term  - $parent"
+                }                
+        }
+}
