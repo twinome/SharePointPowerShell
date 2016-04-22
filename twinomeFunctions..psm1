@@ -4272,3 +4272,64 @@ Function Set-DefaultColValueMM {
     Write-Host Default value $tag set -ForegroundColor White -BackgroundColor DarkCyan
 
 }
+
+Function Get-IMPolicyStatusLibrary {
+    <#
+    .SYNOPSIS
+        Returns IM policy status of a library
+    .DESCRIPTION
+        Get-IMPolicyLibrary 
+    .PARAMETER site
+        The website
+    .PARAMETER lib
+        The Library
+    .EXAMPLE
+        Get-IMPolicyStatusLibrary -site https://speval -lib "customLib"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$lib
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $list = $web.Lists[$lib]
+            $type = $list.BaseType
+
+                if($list) {
+                    
+                    if ($type -eq "DocumentLibrary"){ 
+                        try {
+                            $policy = [Microsoft.Office.RecordsManagement.InformationPolicy.ListPolicySettings]($list)
+                            $hasPolicy = $policy.ListHasPolicy
+                            Write-Output $hasPolicy                 
+                        }
+        
+                        catch {
+                            $error = $_
+                            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                        }
+                    }
+                    else{
+                        Write-Output "list $lib isn't a document library"
+                    }
+                }
+
+                else {
+                    Write-Output "list $lib doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
