@@ -4226,3 +4226,49 @@ Function Get-TermsWithKeyword {
                 }                
         }
 }
+
+Function Set-DefaultColValueMM {
+    <#
+    .SYNOPSIS
+        Sets library managed metadata column defaults  
+    .DESCRIPTION
+        Set-DefaultColValueMM 
+    .PARAMETER web
+        Web site address
+    .PARAMETER library
+        Library name
+    .PARAMETER field
+        Internal field name for column you're wanting to set
+    .PARAMETER group
+        Term group label
+    .PARAMETER set
+        Term set label
+    .PARAMETER tag
+        Term label
+    .EXAMPLE
+        Set-DefaultColValueMM -web "http://aweb -library "a library" -field "a field" -group "a term group"-set "a term set" -tag "a tag"
+    #>
+    param (
+        [string]$web,
+        [string]$library,
+        [string]$set,
+        [string]$tag,
+        [string]$field,
+        [string]$group
+    )
+
+    $site = Get-SPWeb -Identity $web
+    $ts = Get-SPTaxonomySession -Site $site.site.Url
+    $tstore = $ts.TermStores[0]
+    $tgroup = $tstore.Groups[$group]
+    $tset = $tgroup.TermSets[$set]
+    $term = $tset.Terms["$tag"]
+    $format = "1033;#" + $term.Name + "|" + $term.Id
+    $list = $site.lists[$library]
+    $columnDefault = New-Object Microsoft.Office.DocumentManagement.MetadataDefaults($list)
+    $folder = $list.RootFolder.ServerRelativeUrl
+    $columnDefault.SetFieldDefault($folder, $field, $format)
+    $columnDefault.Update()
+    Write-Host Default value $tag set -ForegroundColor White -BackgroundColor DarkCyan
+
+}
