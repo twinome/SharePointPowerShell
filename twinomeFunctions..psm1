@@ -4333,3 +4333,111 @@ Function Get-IMPolicyStatusLibrary {
         }
     }
 } 
+
+Function Disable-ThrottlingList {
+    <#
+    .SYNOPSIS
+        Disables throttling in a list
+    .DESCRIPTION
+        Disable-ThrottlingList 
+    .PARAMETER site
+        The website
+    .PARAMETER list
+        The title title
+    .EXAMPLE
+        Disable-ThrottlingList -site https://speval -list "customLib"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$list
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $title = $web.Title
+            $lst = $web.Lists[$list]
+
+                if($lst) {
+                    try {
+                        $lst.EnableThrottling = $false
+                        Write-Output "Throttling disabled in $list | $title"                    
+                    }
+        
+                    catch {
+                        $error = $_
+                        Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                    }
+                }
+
+                else {
+                    Write-Output "list $list doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
+
+Function Enable-ThrottlingList {
+    <#
+    .SYNOPSIS
+        Enables throttling in a list
+    .DESCRIPTION
+        Enable-ThrottlingList
+    .PARAMETER site
+        The website
+    .PARAMETER list
+        The title title
+    .EXAMPLE
+        Enable-ThrottlingList -site https://speval -list "customLib"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$list
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site
+            $title = $web.Title
+            $lst = $web.Lists[$list]
+
+                if($lst) {
+                    try {
+                        $lst.EnableThrottling = $true
+                        Write-Output "Throttling enabled in $list | $title"                    
+                    }
+        
+                    catch {
+                        $error = $_
+                        Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                    }
+                }
+
+                else {
+                    Write-Output "list $list doesnt exist in $site"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
