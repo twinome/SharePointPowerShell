@@ -4441,3 +4441,104 @@ Function Enable-ThrottlingList {
         }
     }
 } 
+
+Function Set-LibRetention {
+    <#
+    .SYNOPSIS
+        Use this to set a retention period policy in a library
+    .DESCRIPTION
+        Set-LibRetention
+    .PARAMETER site
+        The website
+    .PARAMETER lib
+        Library name
+    .PARAMETER field
+        Field name. Has to be of type datetime (created, modified, document date etc)
+    .PARAMETER Period
+        Choose a period of time (days, years, or months)
+    .PARAMETER Number
+        Choose a unit of time to retain content (has to be an integer) 
+    .PARAMETER Action
+        Choose either MoveToRecycleBin, delete, DeletePreviousDrafts, or DeletePreviousVersions
+    .EXAMPL
+        Set-LibRetention -site https://asite -lib "alib" -field "adatetypefield" -period "days" -number "2" -action "delete DeletePreviousVersions
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$lib,
+        [string]$description,
+        [string]$field,
+        [int]$number,
+        [ValidateSet("days", "years", "months")][string]$period,
+        [ValidateSet("MoveToRecycleBin", "delete", "DeletePreviousDrafts", "DeletePreviousVersions")][string]$action
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web = Get-SPWeb $site 
+            $list = $web.Lists[$lib]
+
+                if($list) {
+                    $col = $list.Fields | Where-Object {$_.title -eq $field -and $_.type -eq "DateTime"}
+
+                        if($col){
+                            
+                            try {
+                                $fieldID = $col.id
+                                $id = "Microsoft.Office.RecordsManagement.PolicyFeatures.Expiration.Action.$action"
+                                $xml = "<Schedules nextStageId=`"2`">"+
+                                            "<Schedule type=`"Default`">"+
+                                            "<stages>"+
+                                            "<data stageId=`"1`">"+
+                                            "<formula id=`"Microsoft.Office.RecordsManagement.PolicyFeatures.Expiration.Formula.BuiltIn`">"+
+                                            "<number>"+$number+"</number>"+
+                                            "<property>"+$field+"</property>"+
+                                            "<propertyId>"+$fieldID+"</propertyId>"+
+                                            "<period>"+$period+"</period>"+
+                                            "</formula>"+
+                                            "<action type=`"action`" id=`""+$id+"`" />"+
+                                            "</data>"+
+                                            "</stages>"+
+                                            "</Schedule></Schedules>"
+
+                                $title = $web.title
+                                $root = $list.RootFolder.ServerRelativeUrl
+                                $policy = [Microsoft.Office.RecordsManagement.InformationPolicy.ListPolicySettings]($list)
+                                $policy.SetRetentionSchedule($root, $xml, $description)
+                                $policy.UseListPolicy = $true
+                                $policy.Update()
+                                Write-Output "Policy set in $lib | $title"                    
+                            }
+        
+                            catch {
+                                $error = $_
+                                Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                            }
+                        }
+
+                        else{
+                            Write-Output "field $field doesnt exist or is not of type datetime" 
+                        }
+                }
+
+                else {
+                    Write-Output "list $lib doesnt exist in $title"                
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        $web.Dispose()   
+    }
+} 
