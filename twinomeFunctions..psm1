@@ -17,62 +17,6 @@ Comments: SharePoint functions
 #REQUIRES -Version 4.0
 #REQUIRES -RunAsAdministrator
 
-Function ApprovedVerb-TWPATTERN {
-    <#
-    .SYNOPSIS
-        Blah
-    .DESCRIPTION
-        TEMPLATE
-    .PARAMETER 1
-        Blah
-    .PARAMETER 2
-        Blah
-    .EXAMPLE
-        ApprovedVerb-TWPATTERN -site https://speval -lib "testClone"
-    #>
-    [CmdletBinding()] 
-    param (
-        [string]$site, 
-        [string]$lib
-    )
-      
-    BEGIN {
-        Start-SPAssignment -Global
-        $web = Get-SPWeb $site -ErrorAction SilentlyContinue
-    
-    }
-    
-    PROCESS {    
-            if($web) {
-                $list = $web.Lists[$lib]
-
-                if($list) {
-                    try {
-                        $list.delete()
-                        $web.Update()
-                        Write-Output "list $lib deleted"                    
-                    }
-        
-                    catch [system.exception] {
-                        Write-Output "$($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)"                   
-                    }
-                }
-
-                else {
-                    Write-Output "list $lib doesnt exist in $site"                
-                }
-            }
-
-            else {
-                Write-Output "web $site doesnt exist"
-            }
-    }
-
-    END {
-        Stop-SPAssignment -Global    
-    }
-}
-
 Function ApprovedVerb-TWPATTERNErrorHandle {
     <#
     .SYNOPSIS
@@ -93,7 +37,7 @@ Function ApprovedVerb-TWPATTERNErrorHandle {
     )
       
     BEGIN {
-        Start-SPAssignment -Global
+
         $ErrorActionPreference = 'Stop'    
     }
     
@@ -129,7 +73,8 @@ Function ApprovedVerb-TWPATTERNErrorHandle {
     }
 
     END {
-        Stop-SPAssignment -Global    
+
+        $web.dispose()    
     }
 } 
 
