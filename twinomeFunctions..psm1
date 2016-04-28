@@ -160,40 +160,34 @@ Function Add-Library {
         [string]$libraryDescription
     )
     
-    Start-SPAssignment –Global
-    
     $site = Get-SPweb -Identity $webSite -ErrorAction SilentlyContinue
 
-        if($site -ne $null){
-            #$listTemplate = $site.ListTemplates[$libraryTemplate]
-            $listTemplate = $site.Site.GetCustomListTemplates($site)[$libraryTemplate]
+        if($site){
+             $listTemplate = $site.ListTemplates[$libraryTemplate]
                 
-                if($listTemplate -ne $null){
-                $exists = $site.Lists.TryGetList($libraryName)
+                if($listTemplate){
+                $exists = $site.Lists[$libraryName]
                     
-                    if($exists -eq $null){
+                    if(!$exists){
                         $site.Lists.Add($libraryUrl,$libraryDescription,$listTemplate)
                         $list = $site.Lists[$libraryUrl]
                         $list.Title = $libraryName
                         $list.Update()
-                        write-host "Create-Library - Success! $libraryName added to $webSite" -BackgroundColor "Green" -ForegroundColor "White" 
+                        Write-Output "Create-Library - Success! $libraryName added to $webSite"
                     }
                     
                     else{
-                        Write-Host "Create-Library - $libraryName already exists with url $libraryUrl, please check the name/url and try again" -BackgroundColor "Red" -ForegroundColor "White"  
+                        Write-Output "Create-Library - $libraryName already exists with url $libraryUrl, please check the name/url and try again"
                     }
                 }
                 else{
-                    Write-Host "Create-Library - $libraryTemplate doesn't exist, please check the name and try again" -BackgroundColor "Red" -ForegroundColor "White"  
+                    Write-Output "Create-Library - $libraryTemplate doesn't exist, please check the name and try again" 
                 } 
         }
 
         else{
-        Write-Host "Create-Library - site doesn't exist, please check the url and try again" -BackgroundColor "Red" -ForegroundColor "White"  
+            Write-Output "Create-Library - site doesn't exist, please check the url and try again"
         }
-
-   Stop-SPAssignment –Global            
-
 }
 
 Function Add-CTLibrary {
@@ -216,57 +210,52 @@ Function Add-CTLibrary {
         [string]$webSite,
         [string]$contentType
     )
-    
-    Start-SPAssignment –Global
 
     $site = Get-SPweb -Identity $webSite -ErrorAction SilentlyContinue
 
-        if($site -ne $null){
+        if($site){
             $ct = $site.Site.RootWeb.ContentTypes[$contentType]
 
-                if($ct -ne $null){
+                if($ct){
                     $list = $site.Lists[$libraryName]
 
-                    if($list -ne $null){
+                    if($list){
                        $allowCT = $list.ContentTypesEnabled
                        $exits = $list.ContentTypes[$contentType]
                        
-                        if($exits -eq $null){ 
+                        if(!$exits){ 
                             if($allowCT -eq $false){
                                 $list.ContentTypesEnabled = $true
                                 $list.Update()
-                                write-host "Add-CTLibrary - Enabled content types in $libraryName" -BackgroundColor "Green" -ForegroundColor "White"    
+                                Write-Output "Add-CTLibrary - Enabled content types in $libraryName"
                                 $list.ContentTypes.Add($ct)
-                                write-host "Add-CTLibrary - Success! $contentType added to $libraryName in $webSite" -BackgroundColor "Green" -ForegroundColor "White"          
+                                Write-Output "Add-CTLibrary - Success! $contentType added to $libraryName in $webSite"          
                             }
 
                             else{
                                 $list.ContentTypes.Add($ct)
-                                write-host "Add-CTLibrary - Success! $contentType added to $libraryName in $webSite" -BackgroundColor "Green" -ForegroundColor "White"                             
+                                Write-Output "Add-CTLibrary - Success! $contentType added to $libraryName in $webSite"                            
                             }
                         }
                         
                         else{
-                        Write-Host "Add-CTLibrary - content type already exists, please check and try again" -BackgroundColor "Red" -ForegroundColor "White" 
+                        Write-Output "Add-CTLibrary - content type already exists, please check and try again"
                         }
                     }
                     
                     else{
-                        Write-Host "Add-CTLibrary - list doesn't exist, please check and try again" -BackgroundColor "Red" -ForegroundColor "White" 
+                        Write-Output "Add-CTLibrary - list doesn't exist, please check and try again"
                     }
                 }
 
                 else{
-                    Write-Host "Add-CTLibrary - content type doesn't exist, please check and try again" -BackgroundColor "Red" -ForegroundColor "White" 
+                    Write-Output "Add-CTLibrary - content type doesn't exist, please check and try again" 
                 }
         }
 
         else{
-        Write-Host "Add-CTLibrary - site doesn't exist, please check the url and try again" -BackgroundColor "Red" -ForegroundColor "White"  
+            Write-Output "Add-CTLibrary - site doesn't exist, please check the url and try again" 
         }
-
-    Stop-SPAssignment –Global
-
 }
 
 Function Remove-ContentTypeList {
@@ -292,29 +281,29 @@ Function Remove-ContentTypeList {
 
     $web = Get-SPweb -Identity $site -ErrorAction SilentlyContinue
 
-        if($web -ne $null){
+        if($web){
             $list = $web.Lists[$listName]
         
-            if($list -ne $null){
+            if($list){
                 $exits = $list.ContentTypes[$contentType]
 
-                if($exits -ne $null){
+                if($exits){
                     $list.ContentTypes.Delete($exits.id)
                     $list.Update()
-                    Write-Host $contentType deleted -ForegroundColor White -BackgroundColor DarkCyan
+                    Write-Output "$contentType deleted"
                 }          
                            
                 else{
-                    Write-Host $contentType content type type not found -BackgroundColor "Red" -ForegroundColor "White"                           
+                    Write-Output "$contentType content type type not found"                       
                 }
             }
 
             else{
-                Write-Host list not found -BackgroundColor "Red" -ForegroundColor "White" 
+                Write-Output "list not found"
             }
         }
         else{
-        	Write-Host site not found -BackgroundColor "Red" -ForegroundColor "White"  
+            Write-Output "site not found"
         }
 }
 
@@ -1853,10 +1842,10 @@ Function Force-Checkout {
         if($status -eq $false){
             $list.ForceCheckout = $true
             $list.Update()
-            Write-Host checkout enforced
+            Write-Output "Checkout enforced"
         }
-        else{
-            Write-Host checkout already enforced
+        else{ 
+            Write-Output "Checkout already enforced"
         }
 }
 
@@ -1916,10 +1905,10 @@ Function Set-MajorVersion {
         if($status -eq $false){
             $list.EnableVersioning = $true
             $list.Update()
-            Write-Host Major versioning enabled
+            Write-Output "Major versioning enabled"
         }
         else{
-            Write-Host Major versioning already enabled
+            Write-Output "Major versioning already enabled"
         }
 }
 
@@ -2012,10 +2001,10 @@ Function Disable-Folders {
         if($status -eq $true){
             $list.EnableFolderCreation = $false
             $list.Update()
-            Write-Host Folders disabled
+            Write-Output "Folders disabled"
         }
         else{
-            Write-Host Folders already disabled
+            Write-Output "Folders already disabled"
         }
 }
 
@@ -4542,3 +4531,35 @@ Function Set-LibRetention {
         $web.Dispose()   
     }
 } 
+
+Function Set-DefaultView {
+    <#
+    .SYNOPSIS
+        Sets columns in default library view 
+    .DESCRIPTION
+        Set-DefaultView
+    .PARAMETER libraryName
+        Name of library
+    .PARAMETER webSite
+        The website
+    .EXAMPLE
+        Enable-ThrottlingList -site https://speval -list "customLib"
+    #>
+    param (
+        [string]$libraryName,
+        [string]$webSite
+    )
+
+    $items = "DocIcon","LinkFilename","Modified","Editor","CheckoutUser"
+    $web = Get-SPWeb -Identity $webSite
+    $list = $web.Lists[$libraryName]
+    $view = $list.Views["All Documents"]
+    $view.ViewFields.DeleteAll()
+    $view.Update()
+
+        foreach($item in $items){
+            $view.ViewFields.Add("$item")
+            Write-Output "$item column added"
+        }
+    $view.Update()
+}
