@@ -2223,10 +2223,10 @@ Function Add-LibraryQuickLaunch {
         if($status -eq $false){
             $list.OnQuickLaunch = $true
             $list.Update()
-            Write-Host Library added to quick launch
+            Write-Output "Library added to quick launch"
         }
         else{
-            Write-Host Library already on quick launch
+            Write-Output "Library already on quick launch"
         }
 }
 
@@ -2352,10 +2352,10 @@ Function Break-InheritanceList {
         if($status -eq $false){
             $list.BreakRoleInheritance($option)
             $list.Update()
-            Write-Host Permission inheritance broken
+            Write-Output "Permission inheritance broken"
         }
         else{
-            Write-Host Permission inheritance already broken
+            Write-Output "Permission inheritance already broken"
         }
 }
 
@@ -2414,7 +2414,7 @@ Function Add-RootFolder {
     $list = $site.Lists[$library]
     $folder = $list.Folders.Add("", [Microsoft.SharePoint.SPFileSystemObjectType]::Folder, $folderName)
     $folder.Update()
-    Write-Host $folderName added -ForegroundColor White -BackgroundColor DarkCyan
+    Write-Output "$folderName added"
 }
 
 Function Break-InheritanceFolder {
@@ -2453,7 +2453,7 @@ Function Break-InheritanceFolder {
                     write-host $folder
                     $folder.BreakRoleInheritance($option)
                     $folder.update()
-                    Write-Host Permission inheritance broken -ForegroundColor White -BackgroundColor DarkCyan
+                    Write-Output "Permission inheritance broken"
                 }
         }
 }
@@ -2538,7 +2538,7 @@ Function Grant-PermissionsFolder {
                 if($path -eq "$folderUrl"){
                     $folder.RoleAssignments.Add($roleAssignment)
                     $folder.Update()
-                    write-host permissions added -ForegroundColor White -BackgroundColor DarkCyan   
+                    write-output "permissions added"
                 }
         }
 }
@@ -2576,7 +2576,7 @@ Function Grant-PermissionsList {
     $roleAssignment.RoleDefinitionBindings.Add($roleDefinition)
     $list.RoleAssignments.Add($roleAssignment)
     $list.Update()
-    write-host permissions added -ForegroundColor White -BackgroundColor DarkCyan    
+    write-output "permissions added"   
 }
 
 Function Activate-Feature {
