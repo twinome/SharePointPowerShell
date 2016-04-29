@@ -4508,3 +4508,52 @@ Function Set-DefaultView {
         }
     $view.Update()
 }
+
+Function Set-CrawlsContentSource {
+    <#
+    .SYNOPSIS
+        Start, stop, pause etc. crawls for content source
+    .DESCRIPTION
+        Set-CrawlsContentSource
+    .PARAMETER contentSource
+        The content source name
+    .PARAMETER action
+        PauseCrawl, StopCrawl, StartFullCrawl, StartIncrementalCrawl etc.  
+    .EXAMPLE
+        Set-CrawlsContentSource -contentSource "SharePoint" -action PauseCrawl
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$contentSource, 
+        [ValidateSet("PauseCrawl", "StopCrawl", "StartFullCrawl", "StartIncrementalCrawl")][string]$action
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $sa = Get-SPEnterpriseSearchServiceApplication -Identity "Search Service Application"
+            $cs = $sa | Get-SPEnterpriseSearchCrawlContentSource -Identity $contentSource
+
+                try {
+                    $command = "$" + "cs." + "$action" + "()"
+                    invoke-expression $command
+                    Write-Output "Action $action initiated"                    
+                }
+        
+                catch {
+                    $error = $_
+                    Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"                   
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
