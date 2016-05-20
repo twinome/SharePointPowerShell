@@ -4557,3 +4557,48 @@ Function Set-CrawlsContentSource {
         }
     }
 } 
+
+Function Remove-SPUserWrap {
+    <#
+    .SYNOPSIS
+        Removes a user from a site collection 
+    .DESCRIPTION
+        Remove-SPUserWrap
+    .PARAMETER site
+        Site Url
+    .PARAMETER user
+        DOMAIN\username
+    .EXAMPLE
+        Remove-SPUserWrap -site https://asite -user "DOMAIN\username"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$site, 
+        [string]$user
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $full = "i:0#.w|$user"
+            Remove-SPUser -Identity $full -Web $site -confirm:$false
+            Write-Output "$user deleted from $site"
+
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+
+        $web.dispose()    
+    }
+} 
