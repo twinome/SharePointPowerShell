@@ -4570,6 +4570,21 @@ Function Remove-SPUserWrap {
         DOMAIN\username
     .EXAMPLE
         Remove-SPUserWrap -site https://asite -user "DOMAIN\username"
+
+            ##Bulk from CSV##
+
+                $accounts = Import-Csv -Path source.csv
+                $sites = Get-SPSite -WebApplication "https://edrm.cma.gov.uk" -Limit all
+
+                    foreach ($account in $accounts){
+                        $id = $account.account
+
+                            $sites | ForEach-Object{
+                                $url = $_.Url
+                                Remove-SPUserWrap -site $url -user $id
+                            }
+                        Pause
+                    }
     #>
     [CmdletBinding()] 
     param (
