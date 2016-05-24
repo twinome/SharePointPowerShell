@@ -4596,9 +4596,4 @@ Function Remove-SPUserWrap {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
-
-    END {
-
-        $web.dispose()    
-    }
 } 
