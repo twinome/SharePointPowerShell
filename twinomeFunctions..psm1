@@ -4574,7 +4574,7 @@ Function Remove-SPUserWrap {
             ##Bulk from CSV##
 
                 $accounts = Import-Csv -Path source.csv
-                $sites = Get-SPSite -WebApplication "https://edrm.cma.gov.uk" -Limit all
+                $sites = Get-SPSite -WebApplication "https://awebapp" -Limit all
 
                     foreach ($account in $accounts){
                         $id = $account.account
