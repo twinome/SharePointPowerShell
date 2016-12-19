@@ -4611,4 +4611,86 @@ Function Remove-SPUserWrap {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
+}
+
+Function Clear-FileLock {
+    <#
+    .EXAMPLE
+        Clear-FileLock -web https://aweb -list "alist" -doc "adoc.docx"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$web, 
+        [string]$list,
+        [string]$doc
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wb = Get-SPWeb $web
+            $lst = $wb.Lists[$list]
+            $item = $lst.Items | Where-Object {$_.name -eq $doc}
+            $item.File.ReleaseLock($item.File.LockId)
+            Write-Output "removed lock"   
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        $wb.dispose()    
+    }
+}
+
+Function Clear-FileLockImpersonated {
+    <#
+    .EXAMPLE
+        Clear-FileLockImpersonated -web https://aweb -list "alist" -doc "adoc.docx"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$web, 
+        [string]$list,
+        [string]$doc
+    )
+      
+    BEGIN {
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wb = Get-SPWeb $web
+            $lst = $wb.Lists[$list]
+            $item = $lst.Items | Where-Object {$_.name -eq $doc}
+            $userId = $item.File.LockedByUser.ID
+            $user = $wb.AllUsers.GetById($userId)
+            $impSite = New-Object Microsoft.SharePoint.SPSite($wb.Url, $user.UserToken)
+            $impWeb = $impSite.OpenWeb()
+            $impList = $impWeb.Lists[$list]
+            $impItem = $impList.Items | Where-Object {$_.name -eq $doc}
+            $impItem.File.ReleaseLock($impItem.File.LockId)
+            Write-Output "removed lock for $user"   
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+
+    END {
+        $impWeb.Dispose()
+        $impSite.Dispose()
+        $wb.dispose()    
+    }
 } 
