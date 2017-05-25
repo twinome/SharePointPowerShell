@@ -4693,4 +4693,401 @@ Function Clear-FileLockImpersonated {
         $impSite.Dispose()
         $wb.dispose()    
     }
-} 
+}
+
+Function New-KerbSSLWA {
+    <#
+    .SYNOPSIS
+        Creates a SSL web application with Kerberos Auth
+    .DESCRIPTION
+        New-KerbWA
+    .PARAMETER name
+        Web application name
+    .PARAMETER url
+        Url
+    .PARAMETER hostHeader
+        Url
+    .PARAMETER applicationPoolAccount
+        Application pool account
+    .PARAMETER databaseName
+        Content database name
+    .EXAMPLE
+        New-KerbSSLWA -name "POC" -url "https://poc.cma.gov.uk" -hostHeader "poc.cma.gov.uk" -applicationPoolAccount "CMA\spevaladmin" -databaseName "SP_Content_POC"
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$name,
+        [string]$url,
+        [string]$hostHeader,
+        [string]$applicationPoolAccount,
+        [string]$databaseName
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $cred = Get-Credential 
+            New-SPManagedAccount –Credential $cred
+            $auth = New-SPAuthenticationProvider -DisableKerberos:$false
+            New-SPWebApplication -Name $name -HostHeader $hostHeader -Url $url -Port 443 -ApplicationPoolAccount (Get-SPManagedAccount $applicationPoolAccount) -ApplicationPool $name -AuthenticationProvider $auth -SecureSocketsLayer -DatabaseName $databaseName
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function Set-WABrowserFileHandlingPermissive {
+    <#
+    .SYNOPSIS
+        Sets browser file handling for web application to permissive
+    .DESCRIPTION
+        Set-WABrowserFileHandlingPermissive
+    .PARAMETER webApplicationUrl
+        Web application url
+    .EXAMPLE
+        Set-WABrowserFileHandlingPermissive -webApplicationUrl "https://poc.cma.gov.uk"
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$webApplicationUrl
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wa = Get-SPWebApplication -Identity $webApplicationUrl
+            $wa.BrowserFileHandling = "permissive"
+            $wa.Update()    
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function Set-WATimeZoneUK {
+    <#
+    .SYNOPSIS
+        Sets time zone for web application to UK
+    .DESCRIPTION
+        Set-BrowserFileHandlingPermissive
+    .PARAMETER webApplicationUrl
+        Web application url
+    .EXAMPLE
+        Set-WATimeZoneUK -webApplicationUrl "https://poc.cma.gov.uk"
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$webApplicationUrl
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wa = Get-SPWebApplication -Identity $webApplicationUrl
+            $wa.DefaultTimeZone = "2"
+            $wa.Update()    
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function New-WAUserPolicy {
+    <#
+    .SYNOPSIS
+        Adds a user to policy for web application
+    .DESCRIPTION
+        New-WAUserPolicy
+    .PARAMETER webApplicationUrl
+        Web application url
+    .PARAMETER user
+        User account
+    .PARAMETER userDisplayName
+        User displayname
+    .PARAMETER permissionLevel
+        Permission level (FullRead, FullControl etc.)
+    .EXAMPLE
+        New-WAUserPolicy -webApplicationUrl "https://poc.cma.gov.uk" -user "cma\matt.warburton" -userDisplayName "Matt Warburton" -permissionLevel "FullControl"
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$webApplicationUrl,
+        [string]$user,
+        [string]$userDisplayName,
+        [string]$permissionLevel
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wa = Get-SPWebApplication -Identity $webApplicationUrl
+            $policy = $wa.Policies.Add($user, $userDisplayName)   
+            $policyRole = $wa.PolicyRoles.GetSpecialRole([Microsoft.SharePoint.Administration.SPPolicyRoleType]::$permissionLevel)   
+            $policy.PolicyRoleBindings.Add($policyRole)
+            $wa.Update()    
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function New-SCPub {
+    <#
+    .SYNOPSIS
+        Adds a new publishing site collection
+    .DESCRIPTION
+        New-SCPub
+    .PARAMETER url
+        URL for new site collection
+    .PARAMETER contentDatabase
+        Name for content database
+    .PARAMETER websiteName
+        Display name for site collection
+    .PARAMETER primaryLogin
+        Primary site collection administrator          
+    .EXAMPLE
+        New-SCPub -url https://speval/sites/pubstest -ContentDatabase pubstest -WebsiteName "Pub test" -PrimaryLogin "cma\spevaladmin"
+    #>
+    param (
+        [Parameter(Mandatory=$true)][string]$url, 
+        [Parameter(Mandatory=$true)][string]$contentDatabase, 
+        [Parameter(Mandatory=$true)][string]$websiteName, 
+        [Parameter(Mandatory=$true)][string]$primaryLogin
+    )
+
+            $db = Get-SPContentDatabase -Identity $ContentDatabase -ErrorAction SilentlyContinue
+            $existingSC = Get-SPSite -Identity $url -ErrorAction SilentlyContinue
+            $code = $codes.$template
+            
+                if($existingSC -eq $null){ 
+                
+                    if($db -ne $null){
+                                        
+                        New-SPSite -Url $url –ContentDatabase $contentDatabase -Name $websiteName -Template "BLANKINTERNETCONTAINER#0" -OwnerAlias $primaryLogin
+                        write-host "Add-SiteCollection - Success! $url created" -BackgroundColor "Green" -ForegroundColor "White" 
+                    }
+                    else{
+                        Write-Host "Content database $contentDatabase doesn't exit" -BackgroundColor "Red" -ForegroundColor "White"
+                    
+                            Do {
+                            "[1] Add content DB"
+                            "[2] Exit"
+                            $Selection = Read-Host "Please select an option"
+
+                                if($selection -eq "1"){
+                                    $wa = read-host "please enter the web application that the content DB should be associated with"
+                                    New-CDB -name $contentDatabase -webapp $wa  
+
+                                }
+                                elseif($selection -eq "2"){
+                                    exit
+                                }
+                                else{
+                                    write-host "invalid selection"
+                                }
+
+                            }
+                            Until (($Selection -eq 1) -or ($Selection -eq 2))
+                                                   
+                        New-SPSite -Url $url –ContentDatabase $contentDatabase -Name $websiteName -Template "$code" -OwnerAlias $primaryLogin
+                        write-host "Add-SiteCollection - Success! $url created" -BackgroundColor "Green" -ForegroundColor "White"
+                    }
+                }
+                else{
+                    Write-Host "A site collection with the same address already exists, please try again" -BackgroundColor "Red" -ForegroundColor "White"    
+                }                               
+}
+
+Function New-CDB {
+    <#
+    .SYNOPSIS
+        Adds a content database
+    .DESCRIPTION
+        New-CDB
+    .PARAMETER webapp
+        Web application for content database
+    .PARAMETER name
+        Name for content database
+    .EXAMPLE
+        New-CDB -Name "blah blah" -WebApplication https://speval
+    #>
+    param (
+        [Parameter(Mandatory=$true)][string]$name, 
+        [Parameter(Mandatory=$true)][string]$webapp
+    )
+        $waTest = Get-SPWebApplication -Identity $webapp -ErrorAction SilentlyContinue
+        $dbTest = Get-SPContentDatabase -Identity $name -ErrorAction SilentlyContinue
+
+        if($dbtest -eq $null){
+
+            if($waTest -ne $null){
+                New-SPContentDatabase -Name $name -WebApplication $webapp -ErrorAction SilentlyContinue
+                write-host "Content database $name created" -BackgroundColor "Green" -ForegroundColor "White"
+            }
+            else{
+                Write-Host "Web app $name not found, please try again" -BackgroundColor "Red" -ForegroundColor "White"    
+            }
+        }
+        else{
+            Write-Host "$name already exists" -BackgroundColor "Red" -ForegroundColor "White"     
+        }
+}
+
+Function Set-WebTimeZoneUK {
+    <#
+    .SYNOPSIS
+        Sets time zone for a web to UK
+    .DESCRIPTION
+        Set-WebTimeZoneUK
+    .PARAMETER webUrl
+        Web url
+    .EXAMPLE
+        Set-WebTimeZoneUK -webUrl "https://speval/sites/pubstest1"
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$webUrl
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $web =  get-spweb $webUrl
+            $web.RegionalSettings.LocaleId = 2057
+            $web.Update()    
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function New-PubPage {
+    param (
+        [string]$web,
+        [string]$name,
+        [string]$title,
+        [string]$layout  
+    )
+
+    $wb = Get-SPWeb $web
+    $pubWb =[Microsoft.SharePoint.Publishing.PublishingWeb]::GetPublishingWeb($wb)
+    $pl = $pubWb.GetAvailablePageLayouts() | Where { $_.Name -eq $layout }
+    $page = $pubWb.AddPublishingPage($name, $pl)
+    $page.Update()
+    $page.Title = $title
+    $page.Update()
+    $page.CheckIn("")
+    $page.ListItem.File.Publish("")
+    $wb.Dispose()
+}
+
+Function Set-WelcomePage {
+    param (
+        [string]$web,
+        [string]$path
+    )
+
+    $wb = Get-SPWeb $web
+    $root = $wb.RootFolder
+    $root.WelcomePage = $path
+    $root.Update()
+    $wb.Update()
+    $wb.Dispose()
+}
+
+Function Delete-AllVersions {
+    [CmdletBinding()]
+    param (
+        [string]$web, 
+        [string]$folderPath
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $site = Get-SPWeb $web
+            $folder = $site.GetFolder($folderPath)
+            $files = $folder.files
+
+                $files | ForEach-Object{
+                    $_.Versions.DeleteAll()
+                }
+        }
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
+
+Function Add-NavNode {
+    [CmdletBinding()]
+    param (
+        [string]$web, 
+        [string]$title,
+        [string]$url
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $site = Get-SPWeb $web
+            $link = New-Object Microsoft.SharePoint.Navigation.SPNavigationNode -ArgumentList  @($title, $url); 
+            $site.Navigation.TopNavigationBar.AddAsLast($link)
+        }
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+}
