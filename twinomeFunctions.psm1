@@ -4731,8 +4731,6 @@ Function New-KerbSSLWA {
     PROCESS {
 
         try{
-            $cred = Get-Credential 
-            New-SPManagedAccount –Credential $cred
             $auth = New-SPAuthenticationProvider -DisableKerberos:$false
             New-SPWebApplication -Name $name -HostHeader $hostHeader -Url $url -Port 443 -ApplicationPoolAccount (Get-SPManagedAccount $applicationPoolAccount) -ApplicationPool $name -AuthenticationProvider $auth -SecureSocketsLayer -DatabaseName $databaseName
         }
