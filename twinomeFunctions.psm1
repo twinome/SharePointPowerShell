@@ -5089,3 +5089,123 @@ Function Add-NavNode {
         }
     }
 }
+
+
+Function New-UserProfileCSV {
+    <#
+    .EXAMPLE
+        New-UserProfileCSV -mysiteHost -account
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$mysiteHost, 
+        [string]$csvPath
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'stop'   
+    }
+    
+    PROCESS {
+
+        try{
+            $source = Import-Csv -Path $csvPath
+            $context = get-spservicecontext($mysiteHost)
+            $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
+
+                $source | ForEach-Object {
+                $account = $_.account
+                
+                    try{
+                        $upAccount = $upm.GetUserProfile($account) #try user exits like here http://www.manasbhardwaj.net/add-user-profiles-sharepoint-2013-using-powershell-script/
+                    }
+
+                    catch{
+                        $upAccount = $null
+                    }
+                        
+                    if($upAccount) {
+                        Write-Output "$account already exists"
+                    }
+                        
+                    else {
+                        $props = $source | Get-member -MemberType 'NoteProperty' | Select-Object -ExpandProperty 'Name'
+                            
+                            $props | ForEach-Object {
+                                Write-Output $_ #this is the output of iterating through csv headers, need to do something here
+                            }
+                        
+                        $newprofile = $upm.createuserprofile($account)
+                        $newprofile.commit()
+                    }
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)" 
+        }
+    }
+} 
+
+Function Test-UserProfileHelper {
+    <#
+    .EXAMPLE
+        New-UserProfileCSV -mysiteHost -account
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$mysiteHost, 
+        [string]$account
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'stop'   
+    }
+    
+    PROCESS {
+        $context = get-spservicecontext($mysiteHost)
+        $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
+        $test= $upm.GetUserProfile($account)
+
+            if($test){
+                $true
+            }
+            else{
+                $false
+            }
+    }
+} 
+
+Function Delete-UserProfileCSV {
+    <#
+    .EXAMPLE
+        New-UserProfileCSV -mysiteHost -account
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$mysiteHost, 
+        [string]$account
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $context = get-spservicecontext($mysiteHost)
+            $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
+            $newprofile = $upm.removeuserprofile($account)
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
