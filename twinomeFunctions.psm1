@@ -5090,11 +5090,10 @@ Function Add-NavNode {
     }
 }
 
-
 Function New-UserProfileCSV {
     <#
     .EXAMPLE
-        New-UserProfileCSV -mysiteHost -account
+        New-UserProfileCSV -mysiteHost https://mysite -csvPath "C:\source.csv"
     #>
     [CmdletBinding()] 
     param (
@@ -5115,29 +5114,27 @@ Function New-UserProfileCSV {
             $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
 
                 $source | ForEach-Object {
-                $account = $_.account
-                
-                    try{
-                        $upAccount = $upm.GetUserProfile($account) #try user exits like here http://www.manasbhardwaj.net/add-user-profiles-sharepoint-2013-using-powershell-script/
-                    }
+                $dataRow = $_
+                $account = $dataRow.account
 
-                    catch{
-                        $upAccount = $null
-                    }
-                        
-                    if($upAccount) {
+                    if($upm.UserExists($account)) {
                         Write-Output "$account already exists"
                     }
                         
                     else {
                         $props = $source | Get-member -MemberType 'NoteProperty' | Select-Object -ExpandProperty 'Name'
+                        $newprofile = $upm.createuserprofile($account)
+                        Write-Output "$account - created"    
                             
-                            $props | ForEach-Object {
-                                Write-Output $_ #this is the output of iterating through csv headers, need to do something here
+                            $props | where-object {$_ -ne "account"} | ForEach-Object {
+                                $prop = $_
+                                $data = $dataRow."$prop"
+                                $newprofile[$prop].add($data)
+                                Write-Output "$account - $prop - $data"
                             }
                         
-                        $newprofile = $upm.createuserprofile($account)
                         $newprofile.commit()
+                        Write-Output "$account - finished"
                     }
                 }
         }
@@ -5149,40 +5146,10 @@ Function New-UserProfileCSV {
     }
 } 
 
-Function Test-UserProfileHelper {
+Function Delete-UserProfile {
     <#
     .EXAMPLE
-        New-UserProfileCSV -mysiteHost -account
-    #>
-    [CmdletBinding()] 
-    param (
-        [string]$mysiteHost, 
-        [string]$account
-    )
-      
-    BEGIN {
-
-        $ErrorActionPreference = 'stop'   
-    }
-    
-    PROCESS {
-        $context = get-spservicecontext($mysiteHost)
-        $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
-        $test= $upm.GetUserProfile($account)
-
-            if($test){
-                $true
-            }
-            else{
-                $false
-            }
-    }
-} 
-
-Function Delete-UserProfileCSV {
-    <#
-    .EXAMPLE
-        New-UserProfileCSV -mysiteHost -account
+        Delete-UserProfile -mysiteHost -account
     #>
     [CmdletBinding()] 
     param (
