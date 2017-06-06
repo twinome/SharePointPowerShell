@@ -5092,6 +5092,15 @@ Function Add-NavNode {
 
 Function New-UserProfileCSV {
     <#
+    .SYNOPSIS
+        Use to create user profiles & properties from a CSV file datasource. 
+
+        The first column header in the CSV should be labled "account". Ensure other column header labels match the internal
+        name of the relevant UPA properties.
+    .PARAMETER mysiteHost
+        Enter the url for the mysite host site collection.
+    .PARAMETER csvPath
+        Enter the path to the CSV file. 
     .EXAMPLE
         New-UserProfileCSV -mysiteHost https://mysite -csvPath "C:\source.csv"
     #>
@@ -5144,12 +5153,65 @@ Function New-UserProfileCSV {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)" 
         }
     }
+}
+
+Function Remove-UserProfileCSV {
+    <#
+    .SYNOPSIS
+        Use to bulk delete user profiles from a CSV file datasource. 
+
+        The first column header in the CSV should be labled "account".
+    .PARAMETER mysiteHost
+        Enter the url for the mysite host site collection.
+    .PARAMETER csvPath
+        Enter the path to the CSV file. 
+    .EXAMPLE
+        Remove-UserProfileCSV -mysiteHost https://mysite -csvPath "C:\source.csv"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$mysiteHost, 
+        [string]$csvPath
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'stop'   
+    }
+    
+    PROCESS {
+
+        try{
+            $source = Import-Csv -Path $csvPath
+            $context = get-spservicecontext($mysiteHost)
+            $upm = new-object microsoft.office.server.userprofiles.userprofilemanager($context)
+
+                $source | ForEach-Object {
+                $dataRow = $_
+                $account = $dataRow.account
+
+                    if($upm.UserExists($account)) {
+                        $newprofile = $upm.removeuserprofile($account)
+                        Write-Output "$account - deleted"
+                    }
+                        
+                    else {
+                        Write-Output "$account doesn't exist"
+                    }
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)" 
+        }
+    }
 } 
 
-Function Delete-UserProfile {
+Function Remove-UserProfile {
     <#
     .EXAMPLE
-        Delete-UserProfile -mysiteHost -account
+        Remove-UserProfile -mysiteHost -account
     #>
     [CmdletBinding()] 
     param (
