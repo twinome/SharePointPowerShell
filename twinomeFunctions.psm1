@@ -5237,4 +5237,43 @@ Function Remove-UserProfile {
             Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
         }
     }
+}
+
+Function Get-MaxedFilesLengthWeb {
+    <#
+    .EXAMPLE
+        Get-MaxedFilesLengthWeb -web "https://aweb" | Out-File C:\Users\gen_admin\Desktop\test.csv
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$web,
+        [string]$outPath
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $wb = get-spweb $web
+            $lists = $wb.lists
+
+                $lists | ForEach-Object{
+                    $items = $_.items | Where-Object {($wb.url.Length + $_.url.length) -gt 2}
+
+                        $items | ForEach-Object {
+                            $itemUrl = $_.url
+                            Write-Output $web/$itemUrl
+                        }
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
 } 
