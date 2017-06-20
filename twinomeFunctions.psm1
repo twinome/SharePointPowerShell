@@ -5277,3 +5277,43 @@ Function Get-MaxedFilesLengthWeb {
         }
     }
 } 
+
+Function Delete-UsersSC {
+    <#
+    .EXAMPLE
+        Delete-UsersSC -sc "https://asc"
+    #>
+    [CmdletBinding()] 
+    param (
+        [string]$sc
+    )
+      
+    BEGIN {
+
+        $ErrorActionPreference = 'Stop'    
+    }
+    
+    PROCESS {
+
+        try{
+            $users = Get-SPUser -Web $sc
+
+                $users | ForEach-Object {
+                    $login = $_.userLogin
+                    
+                    if($_.IsSiteAdmin -or $login -eq "SHAREPOINT\system") {
+                        Write-Output "skipping SCA/System - $login"
+                    }
+                    else {
+                        Remove-SPUser -Identity $login -Web $sc -Confirm:$False
+                        Write-Output "deleted - $login"
+                    }
+                }
+        }
+
+        catch{
+            $error = $_
+            Write-Output "$($error.Exception.Message) - Line Number: $($error.InvocationInfo.ScriptLineNumber)"  
+        }
+    }
+} 
